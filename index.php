@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if (isset($_SESSION['username'])) {
-    echo "<h2>Dobrodošao, " . htmlspecialchars($_SESSION['username']) . "!</h2>";
+    echo "<h1>Dobrodošao, " . htmlspecialchars($_SESSION['username']) . "!</h1>";
     include 'includes/nav.php';
     echo "<p>Uloga: " . htmlspecialchars($_SESSION['role']) . "</p>";
     echo '<form method="post" action="auth/logout.php"><button name="logout" type="submit">Odjavi se</button></form>';
