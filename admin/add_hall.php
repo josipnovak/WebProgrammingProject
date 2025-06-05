@@ -1,13 +1,21 @@
-<?php
-include_once '../includes/db.php';
+<?php 
+include '../includes/db.php';
+if($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header("Location: ../admin.php?message=Invalid request");
+    exit;
+}
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = trim($_POST['name']);
-    $num_rows = intval($_POST['num_rows']);
-    $seats_per_row = intval($_POST['seats_per_row']);
-    $capacity = $num_rows * $seats_per_row;
+$data = json_decode(file_get_contents('php://input'), true);
+if(!$data || !isset($data['name']) || !isset($data['num_rows']) || !isset($data['seats_per_row'])) {
+    echo json_encode(['success' => false, 'message' => 'Invalid data']);
+    exit;
+}
+$name = trim($data['name']);
+$num_rows = intval($data['num_rows']);
+$seats_per_row = intval($data['seats_per_row']);
+$capacity = $num_rows * $seats_per_row;
 
-    $stmt = $conn->prepare("INSERT INTO hall (name, capacity) VALUES (?, ?)");
+ $stmt = $conn->prepare("INSERT INTO hall (name, capacity) VALUES (?, ?)");
     $stmt->bind_param("si", $name, $capacity);
     if ($stmt->execute()) {
         $hall_id = $conn->insert_id;
@@ -23,6 +31,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         echo "Error: " . $stmt->error;
     }
-    header("Location: ../admin.php?message=Hall added successfully");
-}
+echo json_encode(['success' => true, 'message' => 'Hall created successfully']);
 ?>

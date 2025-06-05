@@ -1,5 +1,6 @@
-<?php 
-include "includes/db.php";
+<?php
+header('Content-Type: application/json');
+include "../includes/db.php";
 
 $users = [];
 $stmt = $conn->prepare("SELECT id, username, email, role FROM users");
@@ -8,5 +9,6 @@ $result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {
     $users[] = $row;
 }
-return $users;
+echo json_encode($users);
+exit;
 ?>

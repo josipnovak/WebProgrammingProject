@@ -1,11 +1,9 @@
 <?php
 session_start();
-if (isset($_POST['logout'])) {
-    session_destroy();
-    header("Location: ../index.php");
-    exit;
-} else {
-    header("Location: ../index.php");
-    exit;
-}
+header('Content-Type: application/json');
+
+session_destroy();
+
+echo json_encode(['success' => true, 'message' => 'Logged out.']);
+exit;
 ?>

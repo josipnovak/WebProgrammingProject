@@ -12,7 +12,6 @@
                 </form>
             </li>
         <?php elseif( isset($_SESSION['role']) && $_SESSION['role'] == 'user') :?>
-            <li><a href="buy_ticket.php">Buy ticket</a></li>
             <li><a href="my_tickets.php">My tickets</a></li>
             <li><a href="profile.php">Profile</a></li>
             <li>

@@ -35,13 +35,18 @@ switch ($type) {
         exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && 
+    isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
+) {
+    header('Content-Type: application/json');
+    $data = json_decode(file_get_contents('php://input'), true);
     $updates = [];
     $params = [];
     $types = '';
     foreach ($fields as $field) {
         $updates[] = "$field = ?";
-        $params[] = $_POST[$field];
+        $params[] = $data[$field] ?? '';
         $types .= 's';
     }
     $params[] = $id;
@@ -51,10 +56,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $conn->prepare($sql);
     $stmt->bind_param($types, ...$params);
     if ($stmt->execute()) {
-        header("Location: admin.php?message=Record updated successfully");
+        echo json_encode(['success' => true, 'message' => 'Record updated successfully']);
     } else {
-        header("Location: admin.php?message=Failed to update record");
+        echo json_encode(['success' => false, 'message' => 'Failed to update record']);
     }
+    exit;
 }
 
 $stmt = $conn->prepare("SELECT * FROM $table WHERE id = ?");
@@ -68,7 +74,6 @@ if (!$data) {
     exit;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -78,13 +83,36 @@ if (!$data) {
 <body>
     <h1>Edit <?php echo ucfirst(htmlspecialchars($type)); ?></h1>
     <?php include 'includes/nav.php'?>
-    <form method="post">
+    <form id="edit-form">
         <?php foreach ($fields as $i => $field): ?>
             <label><?php echo $labels[$i]; ?>:</label>
             <input type="text" name="<?php echo $field; ?>" value="<?php echo htmlspecialchars($data[$field]); ?>" required><br><br>
         <?php endforeach; ?>
         <button type="submit">Save</button>
+        <span id="edit-msg"></span>
     </form>
     <a href="admin.php">Back to Admin Panel</a>
+    <script>
+    document.getElementById('edit-form').onsubmit = function(e) {
+        e.preventDefault();
+        const form = e.target;
+        const payload = {};
+        <?php foreach ($fields as $field): ?>
+        payload["<?php echo $field; ?>"] = form["<?php echo $field; ?>"].value;
+        <?php endforeach; ?>
+        fetch(window.location.href, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('edit-msg').textContent = data.message;
+            if(data.success) {
+                setTimeout(() => window.location.href = 'admin.php?message=' + encodeURIComponent(data.message), 1000);
+            }
+        });
+    };
+    </script>
 </body>
 </html>

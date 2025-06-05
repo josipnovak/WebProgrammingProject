@@ -1,5 +1,6 @@
-<?php 
-include "includes/db.php";
+<?php
+header('Content-Type: application/json');
+include "../includes/db.php";
 
 $halls = [];
 $stmt = $conn->prepare("SELECT id, name, capacity FROM hall");
@@ -8,5 +9,6 @@ $result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {
     $halls[] = $row;
 }
-return $halls;
+echo json_encode($halls);
+exit;
 ?>

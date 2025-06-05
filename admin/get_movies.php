@@ -1,5 +1,6 @@
-<?php 
-include "includes/db.php";
+<?php
+header('Content-Type: application/json');
+include "../includes/db.php";
 
 $movies = [];
 $stmt = $conn->prepare("SELECT id, title, duration, poster_url FROM movie");
@@ -8,5 +9,6 @@ $result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {
     $movies[] = $row;
 }
-return $movies;
+echo json_encode($movies);
+exit;
 ?>

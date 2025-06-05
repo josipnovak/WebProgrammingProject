@@ -1,5 +1,6 @@
-<?php 
-include "includes/db.php";
+<?php
+header('Content-Type: application/json');
+include "../includes/db.php";
 
 $showtimes = [];
 $stmt = $conn->prepare("SELECT id, movie_id, hall_id, start_time, price FROM showtime ORDER BY start_time ASC");
@@ -8,5 +9,6 @@ $result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {
     $showtimes[] = $row;
 }
-return $showtimes;
+echo json_encode($showtimes);
+exit;
 ?>
