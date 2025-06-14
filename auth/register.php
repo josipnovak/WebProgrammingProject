@@ -16,6 +16,12 @@ if (!$username || !$email || !$password || !$confirm_password) {
     echo json_encode(['success' => false, 'message' => 'All fields are required.']);
     exit;
 }
+
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    echo json_encode(['success' => false, 'message' => 'Please enter a valid email address.']);
+    exit;
+}
+
 if ($password !== $confirm_password) {
     echo json_encode(['success' => false, 'message' => 'Passwords do not match.']);
     exit;

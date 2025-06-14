@@ -15,8 +15,8 @@ $num_rows = intval($data['num_rows']);
 $seats_per_row = intval($data['seats_per_row']);
 $capacity = $num_rows * $seats_per_row;
 
- $stmt = $conn->prepare("INSERT INTO hall (name, capacity) VALUES (?, ?)");
-    $stmt->bind_param("si", $name, $capacity);
+ $stmt = $conn->prepare("INSERT INTO hall (name, capacity, rows, seats_per_row) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("siii", $name, $capacity, $num_rows, $seats_per_row);
     if ($stmt->execute()) {
         $hall_id = $conn->insert_id;
 
@@ -24,7 +24,7 @@ $capacity = $num_rows * $seats_per_row;
             $row_label = chr(65 + $row); 
             for ($seat = 1; $seat <= $seats_per_row; $seat++) {
                 $seat_stmt = $conn->prepare("INSERT INTO seats (hall_id, seat_row, seat_number) VALUES (?, ?, ?)");
-                $seat_stmt->bind_param("isi", $hall_id, $row_label, $seat);
+                $seat_stmt->bind_param("isii", $hall_id, $row_label, $seat);
                 $seat_stmt->execute();
             }
         }

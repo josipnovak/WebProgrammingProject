@@ -7,6 +7,7 @@ session_start();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tickets</title>
+    <link rel="stylesheet" href="styles/style.css">
 </head>
 <body>
     <h1>Tickets</h1>
@@ -37,7 +38,7 @@ session_start();
                         `;
                     });
                 } else {
-                    profileInfo.innerHTML = `<h2>No tickets found for ${data.username}.</h2>`;
+                    profileInfo.innerHTML = `<h2>No tickets found for <?php echo $_SESSION['username']?>.</h2>`;
                 }
             }
         })

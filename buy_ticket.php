@@ -8,6 +8,7 @@ $showtime_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 <head>
     <meta charset="UTF-8">
     <title>Buy Ticket</title>
+    <link rel="stylesheet" href="styles/style.css">
     <style>
         .seat { width: 30px; height: 30px; margin: 2px; display: inline-block; text-align: center; line-height: 30px; border: 1px solid #333; border-radius: 4px; cursor:pointer; }
         .reserved { background: #ccc; cursor:not-allowed; }

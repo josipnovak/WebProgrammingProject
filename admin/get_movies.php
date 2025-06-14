@@ -3,7 +3,7 @@ header('Content-Type: application/json');
 include "../includes/db.php";
 
 $movies = [];
-$stmt = $conn->prepare("SELECT id, title, duration, poster_url FROM movie");
+$stmt = $conn->prepare("SELECT id, title, duration, poster_url, description, genre FROM movie");
 $stmt->execute();
 $result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {
