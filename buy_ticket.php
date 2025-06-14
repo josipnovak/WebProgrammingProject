@@ -7,97 +7,266 @@ $showtime_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Buy Ticket</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buy Ticket - Cinema</title>
     <link rel="stylesheet" href="styles/style.css">
-    <style>
-        .seat { width: 30px; height: 30px; margin: 2px; display: inline-block; text-align: center; line-height: 30px; border: 1px solid #333; border-radius: 4px; cursor:pointer; }
-        .reserved { background: #ccc; cursor:not-allowed; }
-        .selected { background: #6c6; }
-        .seat-row { margin-bottom: 5px; }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <h1>Buy Ticket</h1>
-    <div id="showtime-info"></div>
-    <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'user'): ?>
-        <form id="ticket-form">
-            <input type="hidden" name="showtime_id" value="<?php echo $showtime_id; ?>">
-            <div>
-                <h3>Number of tickets:</h3>
-                <input type="number" id="ticket_count" name="ticket_count" min="1" max="10" value="1" required>
+    <div class="admin-container">
+        <?php
+        if (isset($_GET['message'])) {
+            echo '<div class="alert alert-info"><i class="fas fa-info-circle"></i> ' . htmlspecialchars($_GET['message']) . '</div>';
+        }
+        ?>
+        
+        <h1><i class="fas fa-ticket-alt"></i> Buy Ticket</h1>
+        <?php include 'includes/nav.php'; ?>
+
+    
+
+        <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'user'): ?>
+            <div style="display: flex; gap: 30px; margin-top: 20px;">
+                <!-- Ticket Information Panel -->
+                <div style="flex: 0 0 350px; max-width: 350px;">
+                    <div class="form-container">
+                        <div class="form-card">
+                            <h3><i class="fas fa-shopping-cart"></i> Ticket Details</h3>
+                            <div id="showtime-info"></div>
+                            <form id="ticket-form">
+                                <input type="hidden" name="showtime_id" value="<?php echo $showtime_id; ?>">
+                                
+                                <div class="form-group">
+                                    <label for="ticket_count"><i class="fas fa-users"></i> Number of Tickets</label>
+                                    <input type="number" id="ticket_count" name="ticket_count" min="1" max="10" value="1" required>
+                                </div>
+
+                                <div class="seat-legend">
+                                    <h4><i class="fas fa-info-circle"></i> Seat Legend</h4>
+                                    <div class="legend-item">
+                                        <span class="seat available"></span>
+                                        <span>Available</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <span class="seat selected"></span>
+                                        <span>Selected</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <span class="seat reserved"></span>
+                                        <span>Reserved</span>
+                                    </div>
+                                </div>
+
+                                <div class="selected-seats-info">
+                                    <h4><i class="fas fa-chair"></i> Selected Seats</h4>
+                                    <div id="selected-seats-list">
+                                        <p class="no-selection">No seats selected</p>
+                                    </div>
+                                </div>
+
+                                <div class="total-price">
+                                    <h4><i class="fas fa-calculator"></i> Total Price</h4>
+                                    <div id="total-amount">0€</div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary" id="confirm-btn" disabled>
+                                        <i class="fas fa-credit-card"></i> Confirm Purchase
+                                    </button>
+                                </div>
+                                <div id="purchase-msg" class="form-message"></div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seat Selection Panel -->
+                <div style="flex: 1;">
+                    <div class="section-header">
+                        <h2><i class="fas fa-chair"></i> Select Your Seats</h2>
+                    </div>
+                    
+                    <div class="seat-selection-container">
+                        <div class="cinema-screen">
+                            <i class="fas fa-desktop"></i> SCREEN
+                        </div>
+                        <div id="seat-container" class="loading">
+                            <div class="spinner"></div>
+                            <p>Loading seats...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div>
-                <h3>Select your seats:</h3>
-                <div id="seat-container"></div>
+
+        <?php else: ?>
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i> 
+                Please <a href="index.php">log in</a> to buy a ticket.
             </div>
-            <br>
-            <button type="submit">Confirm Purchase</button>
-        </form>
-        <script>
+        <?php endif; ?>
+    </div>
+
+    <script>
         const showtimeId = <?php echo json_encode($showtime_id); ?>;
-        fetch('api/get_seats_and_showtime.php?id=' + showtimeId)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('showtime-info').innerHTML = `
-                    <p><strong>Movie:</strong> ${data.showtime.title}</p>
-                    <p><strong>Hall:</strong> ${data.showtime.hall_name}</p>
-                    <p><strong>Start Time:</strong> ${data.showtime.start_time}</p>
-                    <p><strong>Price:</strong> ${data.showtime.price}€</p>
-                `;
+        let showtimeData = null;
+        let selectedSeats = [];
 
-                const seatDiv = document.getElementById('seat-container');
-                seatDiv.innerHTML = '';
-                for (const row in data.seats) {
-                    const rowDiv = document.createElement('div');
-                    rowDiv.className = 'seat-row';
-                    rowDiv.innerHTML = `<span>${row}</span> `;
-                    for (const num in data.seats[row]) {
-                        const seat = data.seats[row][num];
-                        const seatId = seat.id;
-                        const reserved = data.reserved[seatId] ? 'reserved' : '';
-                        rowDiv.innerHTML += `
-                            <label style="display:inline-block">
-                                <input type="checkbox" class="seat-checkbox" name="seat_id[]" value="${seatId}" ${reserved ? "disabled" : ""} style="display:none;">
-                                <span class="seat${reserved ? " reserved" : ""}">${num}</span>
-                            </label>
-                        `;
-                    }
-                    seatDiv.appendChild(rowDiv);
-                }
+        function updateSelectedSeatsDisplay() {
+            const listElement = document.getElementById('selected-seats-list');
+            const totalElement = document.getElementById('total-amount');
+            const confirmBtn = document.getElementById('confirm-btn');
+            
+            if (selectedSeats.length === 0) {
+                listElement.innerHTML = '<p class="no-selection">No seats selected</p>';
+                totalElement.textContent = '0€';
+                confirmBtn.disabled = true;
+            } else {
+                listElement.innerHTML = selectedSeats.map(seat => 
+                    `<div class="selected-seat-item">
+                        <i class="fas fa-chair"></i> Row ${seat.row}, Seat ${seat.number}
+                    </div>`
+                ).join('');
+                
+                const total = selectedSeats.length * parseFloat(showtimeData.showtime.price);
+                totalElement.textContent = total.toFixed(0) + '€';
+                confirmBtn.disabled = false;
+            }
+        }
 
-                const ticketCountInput = document.getElementById('ticket_count');
-                function enforceLimit() {
-                    const checkboxes = document.querySelectorAll('.seat-checkbox');
-                    const max = parseInt(ticketCountInput.value) || 1;
-                    let checked = 0;
-                    checkboxes.forEach(cb => {
-                        if (cb.checked) checked++;
-                    });
-                    checkboxes.forEach(cb => {
-                        if (!cb.checked) cb.disabled = (checked >= max) || cb.nextElementSibling.classList.contains('reserved');
-                        else cb.disabled = false;
-                    });
-                }
-                document.querySelectorAll('.seat-checkbox').forEach(function(checkbox) {
-                    checkbox.addEventListener('change', function() {
-                        if (checkbox.checked) {
-                            checkbox.nextElementSibling.classList.add('selected');
-                        } else {
-                            checkbox.nextElementSibling.classList.remove('selected');
+        function loadSeatsAndShowtime() {
+            fetch('api/get_seats_and_showtime.php?id=' + showtimeId)
+                .then(response => response.json())
+                .then(data => {
+                    showtimeData = data;
+                    
+                    // Update showtime info
+                    document.getElementById('showtime-info').innerHTML = `
+                        <div class="dashboard-stats">
+                                <p><i class="fas fa-film"></i> Movie: ${data.showtime.title}</p>
+                                <p><i class="fas fa-clock"></i> Start Time: ${data.showtime.start_time}</p>
+                                <p><i class="fas fa-hotel"></i> Hall: ${data.showtime.hall_name}</p>
+                                <p><i class="fas fa-euro-sign"></i> Price: ${data.showtime.price}€</p>
+                        </div>
+                    `;
+
+                    const seatContainer = document.getElementById('seat-container');
+                    seatContainer.innerHTML = '';
+                    
+                    for (const row in data.seats) {
+                        const rowDiv = document.createElement('div');
+                        rowDiv.className = 'seat-row';
+                        rowDiv.innerHTML = `<span class="row-label">${row}</span>`;
+                        
+                        const seatsDiv = document.createElement('div');
+                        seatsDiv.className = 'seats-in-row';
+                        
+                        for (const num in data.seats[row]) {
+                            const seat = data.seats[row][num];
+                            const seatId = seat.id;
+                            const isReserved = data.reserved[seatId];
+                            
+                            const seatElement = document.createElement('div');
+                            seatElement.className = `seat ${isReserved ? 'reserved' : 'available'}`;
+                            seatElement.textContent = num;
+                            seatElement.dataset.seatId = seatId;
+                            seatElement.dataset.row = row;
+                            seatElement.dataset.number = num;
+                            
+                            if (!isReserved) {
+                                seatElement.addEventListener('click', function() {
+                                    toggleSeat(this);
+                                });
+                            }
+                            
+                            seatsDiv.appendChild(seatElement);
                         }
-                        enforceLimit();
-                    });
+                        
+                        rowDiv.appendChild(seatsDiv);
+                        seatContainer.appendChild(rowDiv);
+                    }
+                    
+                    updateSelectedSeatsDisplay();
+                })
+                .catch(error => {
+                    document.getElementById('showtime-info').innerHTML = `
+                        <div class="alert alert-error">
+                            <i class="fas fa-exclamation-circle"></i> Error loading showtime information
+                        </div>
+                    `;
                 });
-                ticketCountInput.addEventListener('input', enforceLimit);
-                enforceLimit();
-            });
+        }
 
+        function toggleSeat(seatElement) {
+            const ticketCount = parseInt(document.getElementById('ticket_count').value) || 1;
+            const seatId = seatElement.dataset.seatId;
+            const row = seatElement.dataset.row;
+            const number = seatElement.dataset.number;
+            
+            if (seatElement.classList.contains('selected')) {
+                // Deselect seat
+                seatElement.classList.remove('selected');
+                seatElement.classList.add('available');
+                selectedSeats = selectedSeats.filter(seat => seat.id !== seatId);
+            } else {
+                // Check if we can select more seats
+                if (selectedSeats.length >= ticketCount) {
+                    showMessage('You can only select ' + ticketCount + ' seat(s)', 'warning');
+                    return;
+                }
+                
+                // Select seat
+                seatElement.classList.remove('available');
+                seatElement.classList.add('selected');
+                selectedSeats.push({
+                    id: seatId,
+                    row: row,
+                    number: number
+                });
+            }
+            
+            updateSelectedSeatsDisplay();
+        }
+
+        function showMessage(message, type = 'info') {
+            const msgEl = document.getElementById('purchase-msg');
+            msgEl.innerHTML = `<div class="alert alert-${type}">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}
+            </div>`;
+        }
+
+        // Handle ticket count change
+        document.getElementById('ticket_count').addEventListener('input', function() {
+            const newCount = parseInt(this.value) || 1;
+            
+            // If we have more selected seats than allowed, deselect excess
+            if (selectedSeats.length > newCount) {
+                const excess = selectedSeats.slice(newCount);
+                excess.forEach(seat => {
+                    const seatElement = document.querySelector(`[data-seat-id="${seat.id}"]`);
+                    if (seatElement) {
+                        seatElement.classList.remove('selected');
+                        seatElement.classList.add('available');
+                    }
+                });
+                selectedSeats = selectedSeats.slice(0, newCount);
+                updateSelectedSeatsDisplay();
+            }
+        });
+
+        // Handle form submission
         document.getElementById('ticket-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            const ticketCount = document.getElementById('ticket_count').value;
-            const seatCheckboxes = document.querySelectorAll('.seat-checkbox:checked');
-            const seatIds = Array.from(seatCheckboxes).map(cb => cb.value);
-
+            
+            const ticketCount = parseInt(document.getElementById('ticket_count').value) || 1;
+            
+            if (selectedSeats.length !== ticketCount) {
+                showMessage(`Please select exactly ${ticketCount} seat(s)`, 'error');
+                return;
+            }
+            
+            const msgEl = document.getElementById('purchase-msg');
+            msgEl.innerHTML = '<div class="loading-inline"><div class="spinner-small"></div> Processing purchase...</div>';
+            
             fetch('api/process_ticket.php', {
                 method: 'POST',
                 headers: {
@@ -106,19 +275,31 @@ $showtime_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
                 body: JSON.stringify({
                     showtime_id: showtimeId,
                     ticket_count: ticketCount,
-                    seat_ids: seatIds
+                    seat_ids: selectedSeats.map(seat => seat.id)
                 })
             })
             .then(response => response.json())
             .then(result => {
-                if(result.success) {
-                    window.location.href = 'my_tickets.php';
+                if (result.success) {
+                    showMessage('Purchase successful! Redirecting to your tickets...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'my_tickets.php';
+                    }, 1500);
+                } else {
+                    showMessage(result.message || 'Purchase failed', 'error');
                 }
+            })
+            .catch(error => {
+                showMessage('An error occurred during purchase', 'error');
             });
+        })
+
+        document.getElementById('ticket-form').addEventListener("input", function(e) {
+            document.getElementById('purchase-msg').innerHTML = '';
         });
-        </script>
-    <?php else: ?>
-        <p><a href="index.php">Please log in to buy a ticket.</a></p>
-    <?php endif; ?>
+
+        // Load data on page load
+        loadSeatsAndShowtime();
+    </script>
 </body>
 </html>

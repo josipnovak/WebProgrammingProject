@@ -9,13 +9,18 @@ session_start();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Schedule</title>
     <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <h1>Schedule</h1>
     <?php include 'includes/nav.php'; ?>
     <div class="showtime-filter">
         <input type="text" id="filter-movie" placeholder="Search movie name">
-        <input type="date" id="filter-date">
+        <div class="form-group">
+            <input type="text" name="filter-date" id="filter-date" placeholder="Select date" required>
+        </div>
         <input type="number" id="filter-price" placeholder="Max price" min="0">
         <select id="filter-hall">
                 <option value="">All halls</option>
@@ -48,7 +53,7 @@ function renderShowtimes(data) {
         });
         showtimesDiv.innerHTML = html;
     } else {
-        showtimesDiv.innerHTML = "<p>No showtimes found.</p>";
+        showtimesDiv.innerHTML = "<h2>No showtimes found for selected filter.</h2>";
     }
 }
 
@@ -96,6 +101,12 @@ fetch("admin/get_halls.php")
             option.textContent = hall.name;
             hallSelect.appendChild(option);
         });
+    });
+    flatpickr("#filter-date", {
+        enableTime: true,
+        dateFormat: "Y-m-d",
+        time_24hr: true,
+        minDate: "today"
     });
 </script>
 </body>

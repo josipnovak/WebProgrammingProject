@@ -20,7 +20,7 @@ session_start();
         }
         ?>
         
-        <h1>Cinema Admin Dashboard</h1>
+        <h1>Admin Dashboard</h1>
         <?php include 'includes/nav.php'; ?>
 
         <div class="dashboard-stats">
@@ -437,7 +437,6 @@ session_start();
             container.className = 'form-container'; 
             document.getElementById('admin-layout').prepend(container);
         }
-        console.log(hall);
         container.innerHTML = `
             <div class="form-card">
                 <h3><i class="fas fa-edit"></i> Edit Hall</h3>
@@ -535,7 +534,6 @@ session_start();
             container.className = 'form-container'; 
             document.getElementById('admin-layout').prepend(container);
         }
-        console.log(movie);
         container.innerHTML = `
             <div class="form-card">
                 <h3><i class="fas fa-edit"></i> Edit Movie</h3>
@@ -635,7 +633,8 @@ session_start();
                 <i class="fas ${data.success ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${data.message}
             </div>`;
             if(data.success) {
-                setTimeout(() => toggleForm('hall-form'), 1500);
+                toggleForm('add-hall-form');
+                fetchHalls();
             }
         });
     };
@@ -662,7 +661,8 @@ session_start();
                 <i class="fas ${data.success ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${data.message}
             </div>`;
             if(data.success) {
-                setTimeout(() => toggleForm('add-movie-form'), 1500);
+                toggleForm('add-movie-form');
+                fetchMovies();
             }
         });
     };
