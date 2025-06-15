@@ -14,7 +14,7 @@ session_start();
     <h1><i class="fas fa-user-circle"></i> My Profile</h1>
     <?php include 'includes/nav.php'; ?>
 
-    <h2><i class="fas fa-user"></i></h2>
+    <h2 id="profile-subtitle"></h2>
     
     <div class="profile-header">
         <div class="profile-tabs">
@@ -35,6 +35,9 @@ session_start();
 
     <div id="personal-tab" class="tab-content active">
         <div class="profile-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-user"></i> User Details</h2>
+                </div>
             <div id="profile-info" class="profile-card">
                 <div class="loading">
                     <div class="spinner"></div>
@@ -62,12 +65,6 @@ session_start();
                             <i class="fas fa-key"></i> New Password
                         </label>
                         <input type="password" id="new-password" name="new_password" required>
-                        <div class="password-strength">
-                            <div class="strength-bar">
-                                <div class="strength-fill"></div>
-                            </div>
-                            <span class="strength-text">Password strength</span>
-                        </div>
                     </div>
                     <div class="form-group">
                         <label for="confirm-password">
@@ -75,6 +72,7 @@ session_start();
                         </label>
                         <input type="password" id="confirm-password" name="confirm_password" required>
                     </div>
+                    <div class="msg" id="change-pass-msg"></div>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i> Update Password
                     </button>
@@ -128,6 +126,7 @@ session_start();
         });
 
         function loadProfileData() {
+            const profileSubtitle = document.getElementById('profile-subtitle');
             fetch("api/get_profile_data.php", {
                 method: "POST",
                 headers: {
@@ -137,8 +136,14 @@ session_start();
             })
             .then(res => res.json())
             .then(data => {
+                const i = document.createElement('i');
+                i.className = 'fas fa-user';
+                profileSubtitle.appendChild(i);
+                profileSubtitle.innerHTML += " " + data.username || 'User';
+                profileSubtitle.innerHTML += '\'\s Profile';
                 profileData = data;
-                renderProfileInfo(data);
+                renderProfileInfo(profileData);
+                renderActivityStats(profileData);
             })
             .catch(error => {
                 console.error('Error fetching profile data:', error);
@@ -156,113 +161,89 @@ session_start();
             if (data) {
                 const profileInfo = document.getElementById('profile-info');
                 profileInfo.innerHTML = `
-                    <div class="profile-details">
-                        <div class="profile-info-grid">
-                            <div class="info-item">
-                                <label><i class="fas fa-user"></i> Username</label>
-                                <span>${data.username}</span>
+                    <div style="display: flex; gap: 20px; flex-diraction: row; flex-wrap: wrap;">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                               <i class="fas fa-user"></i> 
                             </div>
-                            <div class="info-item">
-                                <label><i class="fas fa-envelope"></i> Email</label>
-                                <span>${data.email}</span>
+                            <div class="stat-content">
+                                <div class="stat-number">${data.username || ''}</div>
+                                <div class="stat-label">Username</div>
                             </div>
-                            <div class="info-item">
-                                <label><i class="fas fa-user-tag"></i> Role</label>
-                                <span class="role-badge role-${data.role.toLowerCase()}">${data.role}</span>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-envelope"></i> 
                             </div>
-                            <div class="info-item">
-                                <label><i class="fas fa-calendar-alt"></i> Member Since</label>
-                                <span>${new Date(data.registered_at).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric'
-                                })}</span>
+                            <div class="stat-content">
+                                <div class="stat-number">${(data.email || '')}</div>
+                                <div class="stat-label">Email</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-user-tag"></i> 
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number">${new Date(data.registered_at).toLocaleDateString('en-GB', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            })}</div>
+                                <div class="stat-label">Joined date</div>
                             </div>
                         </div>
                     </div>
+                    
                 `;
             }
         }
 
         function renderActivityStats(data) {
+            console.log('Rendering activity stats:', data);
             if (data) {
                 const activityStats = document.getElementById('activity-stats');
                 activityStats.innerHTML = `
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-ticket-alt"></i>
+                    <div style="display: flex; gap: 20px; flex-diraction: row; flex-wrap: wrap;">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-ticket-alt"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number">${data.ticket_count || 0}</div>
+                                <div class="stat-label">Tickets Purchased</div>
+                            </div>
                         </div>
-                        <div class="stat-content">
-                            <div class="stat-number">${data.total_tickets || 0}</div>
-                            <div class="stat-label">Tickets Purchased</div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number">$${(data.total_spent || 0).toFixed(2)}</div>
+                                <div class="stat-label">Total Spent</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-dollar-sign"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-number">$${(data.total_spent || 0).toFixed(2)}</div>
-                            <div class="stat-label">Total Spent</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-film"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-number">${data.movies_watched || 0}</div>
-                            <div class="stat-label">Movies Watched</div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-film"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number">${data.movies_watched || 0}</div>
+                                <div class="stat-label">Movies Watched</div>
+                            </div>
                         </div>
                     </div>
                 `;
             }
         }
-
-        function checkPasswordStrength() {
-            const password = document.getElementById('new-password').value;
-            const strengthBar = document.querySelector('.strength-fill');
-            const strengthText = document.querySelector('.strength-text');
-            
+        
+        function checkPasswordStrength(password) {
             let strength = 0;
-            let strengthLabel = '';
-            
-            if (password.length >= 8) strength += 1;
-            if (password.match(/[a-z]/)) strength += 1;
-            if (password.match(/[A-Z]/)) strength += 1;
-            if (password.match(/[0-9]/)) strength += 1;
-            if (password.match(/[^a-zA-Z0-9]/)) strength += 1;
-            
-            switch(strength) {
-                case 0:
-                case 1:
-                    strengthLabel = 'Very Weak';
-                    strengthBar.style.width = '20%';
-                    strengthBar.style.background = '#ff4444';
-                    break;
-                case 2:
-                    strengthLabel = 'Weak';
-                    strengthBar.style.width = '40%';
-                    strengthBar.style.background = '#ff8800';
-                    break;
-                case 3:
-                    strengthLabel = 'Fair';
-                    strengthBar.style.width = '60%';
-                    strengthBar.style.background = '#ffaa00';
-                    break;
-                case 4:
-                    strengthLabel = 'Good';
-                    strengthBar.style.width = '80%';
-                    strengthBar.style.background = '#88cc00';
-                    break;
-                case 5:
-                    strengthLabel = 'Strong';
-                    strengthBar.style.width = '100%';
-                    strengthBar.style.background = '#00cc44';
-                    break;
-            }
-            
-            strengthText.textContent = strengthLabel;
+            if (password.length >= 8) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            return strength;
         }
 
         function handlePasswordChange(e) {
@@ -271,12 +252,12 @@ session_start();
             const currentPassword = document.getElementById('current-password').value;
             const newPassword = document.getElementById('new-password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
+            const msg = document.getElementById('change-pass-msg');
             
-            if (newPassword !== confirmPassword) {
-                alert('New passwords do not match!');
+            if (checkPasswordStrength(newPassword) < 2) {
+                msg.innerHTML = 'New password is too weak.';
                 return;
             }
-            
             fetch("api/change_password.php", {
                 method: "POST",
                 headers: {
@@ -285,16 +266,17 @@ session_start();
                 body: JSON.stringify({
                     id: <?php echo isset($_SESSION['id']) ? $_SESSION['id'] : 0; ?>,
                     current_password: currentPassword,
-                    new_password: newPassword
+                    new_password: newPassword,
+                    confirm_password: confirmPassword
                 })
             })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    alert('Password updated successfully!');
                     document.getElementById('change-password-form').reset();
+                    msg.innerHTML = 'Password updated successfully!';
                 } else {
-                    alert(data.message || 'Error updating password');
+                    msg.innerHTML = data.message || 'Error updating password';
                 }
             })
             .catch(error => {

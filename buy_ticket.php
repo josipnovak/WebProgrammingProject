@@ -242,7 +242,7 @@ $showtime_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
             }
         });
 
-        document.getElementById('ticket-form').addEventListener('submit', function(e) {
+        document.getElementById('ticket-form').onsubmit = function(e) {
             e.preventDefault();
             
             const ticketCount = parseInt(document.getElementById('ticket_count').value) || 1;
@@ -262,13 +262,15 @@ $showtime_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
             msgEl.innerHTML = '<div class="loading-inline"><div class="spinner-small"></div> Processing purchase...</div>';
             
             window.location.href = `payment.php?showtime_id=${showtimeId}&ticket_count=${ticketCount}&seat_ids=${selectedSeats.map(seat => seat.id).join(',')}&total_amount=${encodeURIComponent(total_amount)}`;
-        })
+        }
 
         document.getElementById('ticket-form').addEventListener("input", function(e) {
             document.getElementById('purchase-msg').innerHTML = '';
         });
 
         loadSeatsAndShowtime();
+
+    
     </script>
 </body>
 </html>

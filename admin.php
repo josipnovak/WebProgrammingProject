@@ -103,7 +103,7 @@ session_start();
                                 </div>
                                 <div class="form-group">
                                     <label for="num_rows"><i class="fas fa-list-ol"></i> Number of Rows</label>
-                                    <input type="number" name="num_rows" id="num_rows" min="1" max="26" placeholder="Max 26" required>
+                                    <input type="number" name="num_rows" id="num_rows" min="1" max="10" placeholder="Max 10" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="seats_per_row"><i class="fas fa-chair"></i> Seats per Row</label>
@@ -163,10 +163,6 @@ session_start();
                                     <label for="genre"><i class="fas fa-face"></i> Genre</label>
                                     <input type="text" name="genre" id="genre" placeholder="Enter movie genre" required>
                                 </div>
-                                <div class="form-group">
-                                    <label for="poster_url"><i class="fas fa-image"></i> Poster</label>
-                                    <input type="text" name="poster_url" id="poster_url" placeholder="Enter movie poster" required>
-                                </div>
                             </div>
                             <div class="form-actions">
                                 <button type="submit" class="btn-primary">
@@ -218,7 +214,7 @@ session_start();
                                 </div>
                                 <div class="form-group">
                                     <label for="price"><i class="fas fa-euro-sign"></i> Ticket Price</label>
-                                    <input type="number" step="1" name="price" id="price" placeholder="Enter price" required>
+                                    <input type="number" step="1" min="0" max="200" name="price" id="price" placeholder="Enter price" required>
                                 </div>
                             </div>
                             <div class="form-actions">
@@ -632,33 +628,43 @@ session_start();
         });
     };
 
-    document.getElementById('add-movie-form').onsubmit = function(e) {
-        e.preventDefault();
-        const title = document.getElementById('title').value;
-        const description = document.getElementById('description').value;
-        const genre = document.getElementById('genre').value;
-        const duration = document.getElementById('duration').value;
-        const poster_url = document.getElementById('poster_url').value;
+    document.getElementById('movie-form').onsubmit = async function(e) {
+    e.preventDefault();
+    const title = document.getElementById('title').value;
+    const description = document.getElementById('description').value;
+    const genre = document.getElementById('genre').value;
+    const duration = document.getElementById('duration').value;
+    
+    const msgEl = document.getElementById('add-movie-msg');
+    msgEl.innerHTML = '<div class="loading-inline"><div class="spinner-small"></div> Adding movie...</div>';
+    
+    try {
+        const poster_url = await getMovieImageUrl(title);
         
-        const msgEl = document.getElementById('add-movie-msg');
-        msgEl.innerHTML = '<div class="loading-inline"><div class="spinner-small"></div> Adding movie...</div>';
+        console.log("Title", title, "Duration", duration, "Poster URL", poster_url, "Description", description, "Genre", genre);
         
-        fetch('admin/add_movie.php', {
+        const response = await fetch('admin/add_movie.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({title, duration, poster_url, description, genre})
-        })
-        .then(res => res.json())
-        .then(data => {
-            msgEl.innerHTML = `<div class="alert ${data.success ? 'alert-success' : 'alert-error'}">
-                <i class="fas ${data.success ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${data.message}
-            </div>`;
-            if(data.success) {
-                toggleForm('add-movie-form');
-                fetchMovies();
-            }
         });
-    };
+        
+        const data = await response.json();
+        msgEl.innerHTML = `<div class="alert ${data.success ? 'alert-success' : 'alert-error'}">
+            <i class="fas ${data.success ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${data.message}
+        </div>`;
+        
+        if(data.success) {
+            toggleForm('add-movie-form');
+            fetchMovies();
+        }
+    } catch (error) {
+        console.error('Error adding movie:', error);
+        msgEl.innerHTML = `<div class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i> Error adding movie. Please try again.
+        </div>`;
+    }
+};
     document.getElementById('showtime-form').onsubmit = function(e) {
         e.preventDefault();
         const movie_id = document.getElementById('movie_id').value;
@@ -686,6 +692,26 @@ session_start();
         });
     };
 
+
+        async function getMovieImageUrl(title) {
+            try {
+                const apiKey = '6c979a3f4711b9d5d0a34501a85eced3';
+                const response = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(title)}`);
+                const data = await response.json();
+                
+                if (data.results && data.results.length > 0) {
+                    const movie = data.results[0];
+                    return movie.poster_path
+                        ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                        : 'https://via.placeholder.com/500x750?text=No+poster';
+                } else {
+                    return 'https://via.placeholder.com/500x750?text=No+poster';
+                }
+            } catch (error) {
+                console.error('Error fetching movie poster:', error);
+                return 'https://via.placeholder.com/500x750?text=No+poster';
+            }
+        }
     flatpickr("#start_time", {
         enableTime: true,
         dateFormat: "Y-m-d H:i",

@@ -139,7 +139,13 @@ session_start();
                                     <div class="ticket-group-meta">
                                         <div class="ticket-meta-item">
                                             <i class="fas fa-clock"></i>
-                                            <span>${group.start_time}</span>
+                                            <span>${new Date(group.start_time).toLocaleDateString('en-GB', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}</span>
                                         </div>
                                         <div class="ticket-meta-item">
                                             <i class="fas fa-hotel"></i>

@@ -63,7 +63,13 @@ function renderShowtimes(data) {
                         <div class="showtime-details">
                             <div class="detail-item">
                                 <i class="fas fa-clock"></i>
-                                <span><strong>Start:</strong> ${show.start_time}</span>
+                                <span><strong>Start:</strong> ${new Date(show.start_time).toLocaleDateString('en-GB', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}</span>
                             </div>
                             <div class="detail-item">
                                 <i class="fas fa-hotel"></i>
@@ -72,6 +78,10 @@ function renderShowtimes(data) {
                             <div class="detail-item">
                                 <i class="fas fa-euro-sign"></i>
                                 <span><strong>Price:</strong> ${show.price}€</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-star"></i>
+                                <span><strong>Rating:</strong> ${show.rating}</span>
                             </div>
                         </div>
                     </div>
@@ -92,39 +102,6 @@ function renderShowtimes(data) {
         `;
     }
 }
-
-function fetchShowtimes(filters = {}) {
-    const showtimesDiv = document.getElementById("showtimes");
-    showtimesDiv.innerHTML = `
-        <div class="loading">
-            <div class="spinner"></div>
-            <p>Loading showtimes...</p>
-        </div>
-    `;
-    
-    const formData = new FormData();
-    for (const key in filters) {
-        formData.append(key, filters[key]);
-    }
-    console.log("Fetching showtimes with filters:", Object.fromEntries(formData.entries()));
-    fetch("api/filter_showtimes.php", {
-        method: "POST",
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        renderShowtimes(data);
-    })
-    .catch(error => {
-        showtimesDiv.innerHTML = `
-            <div class="alert alert-error">
-                <i class="fas fa-exclamation-circle"></i> Error loading showtimes. Please try again.
-            </div>
-        `;
-    });
-}
-
-fetchShowtimes();
 
 document.getElementById('filter-btn').onclick = function() {
     const filters = {
@@ -158,6 +135,79 @@ fetch("admin/get_halls.php")
     .catch(error => {
         console.error('Error loading halls:', error);
     });
+
+async function fetchShowtimes(filters = {}) {
+    const showtimesDiv = document.getElementById("showtimes");
+    showtimesDiv.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading showtimes...</p>
+        </div>
+    `;
+   
+    const formData = new FormData();
+    for (const key in filters) {
+        formData.append(key, filters[key]);
+    }
+    
+    try {
+        const response = await fetch("api/filter_showtimes.php", {
+            method: "POST",
+            body: formData
+        });
+        const data = await response.json();
+        
+        await calculateMovieRatings(data);
+        renderShowtimes(data);
+    } catch (error) {
+        console.error('Error fetching showtimes:', error);
+        showtimesDiv.innerHTML = `
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i> Error loading showtimes. Please try again.
+            </div>
+        `;
+    }
+}
+
+async function calculateMovieRatings(showtimes) {
+    const ratingPromises = showtimes.map(async (show) => {
+        if (show.movie_name) {
+            try {
+                show.rating = await getMovieRating(show.movie_name);
+            } catch (error) {
+                console.error(`Error getting rating for ${show.movie_name}:`, error);
+                show.rating = "N/A";
+            }
+        } else {
+            console.warn('No movie name provided for showtime:', show);
+            show.rating = "N/A";
+        }
+    });
+    
+    await Promise.all(ratingPromises);
+}
+
+async function getMovieRating(title) {
+    try {
+        const apiKey = '6c979a3f4711b9d5d0a34501a85eced3';
+        const response = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(title)}`);
+        const data = await response.json();
+       
+        if (data.results && data.results.length > 0) {
+            const movie = data.results[0];
+            return movie.vote_average
+                ? movie.vote_average.toFixed(1)
+                : "N/A";
+        } else {
+            return "N/A";
+        }
+    } catch (error) {
+        console.error('Error fetching movie rating:', error);
+        return "N/A";
+    }
+}
+
+fetchShowtimes();
 
 flatpickr("#filter-date", {
     dateFormat: "Y-m-d",

@@ -42,6 +42,7 @@ session_start();
         <input type="email" id="register-email" placeholder="Email" required>
         <input type="password" id="register-password" placeholder="Password" required>
         <input type="password" id="register-confirm" placeholder="Confirm Password" required>
+        <div id="password-strength" class="password-strength"></div>
         <button id="register-btn">Register</button>
         <div class="msg" id="register-msg"></div>
         <div class="switch-link" onclick="showLogin()">Already have an account? Login</div>
@@ -89,6 +90,10 @@ session_start();
             const email = document.getElementById('register-email').value;
             const password = document.getElementById('register-password').value;
             const confirm_password = document.getElementById('register-confirm').value;
+            if (checkPasswordStrength(password) < 2) {
+                document.getElementById('register-msg').textContent = 'Password is too weak.';
+                return;
+            }
             fetch('auth/register.php', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -104,6 +109,14 @@ session_start();
                 }
             });
         };
+        function checkPasswordStrength(password) {
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            return strength;
+        }
     </script>
     <?php endif; ?>
 </body>
