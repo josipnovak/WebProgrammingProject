@@ -13,7 +13,6 @@ session_start();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <div class="admin-container">
         <?php
         if (isset($_GET['message'])) {
             echo '<div class="alert alert-info"><i class="fas fa-info-circle"></i> ' . htmlspecialchars($_GET['message']) . '</div>';
@@ -218,7 +217,7 @@ session_start();
                                     <input type="text" name="start_time" id="start_time" placeholder="Select date and time" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="price"><i class="fas fa-dollar-sign"></i> Ticket Price</label>
+                                    <label for="price"><i class="fas fa-euro-sign"></i> Ticket Price</label>
                                     <input type="number" step="1" name="price" id="price" placeholder="Enter price" required>
                                 </div>
                             </div>
@@ -287,7 +286,6 @@ session_start();
                         html = `<table class="admin-table">
                             <thead>
                                 <tr>
-                                    <th><i class="fas fa-id-badge"></i> ID</th>
                                     <th><i class="fas fa-user"></i> Username</th>
                                     <th><i class="fas fa-envelope"></i> Email</th>
                                     <th><i class="fas fa-user-tag"></i> Role</th>
@@ -298,7 +296,6 @@ session_start();
                         users.forEach(u => {
                             let user = JSON.stringify(u).replace(/'/g, "\\'");
                             html += `<tr>
-                                <td><span class="id-badge">${u.id}</span></td>
                                 <td><strong>${u.username}</strong></td>
                                 <td>${u.email}</td>
                                 <td><span class="role-badge ${u.role}">${u.role}</span></td>
@@ -392,7 +389,6 @@ session_start();
                     html = `<table class="admin-table">
                         <thead>
                             <tr>
-                                <th><i class="fas fa-id-badge"></i> ID</th>
                                 <th><i class="fas fa-building"></i> Hall Name</th>
                                 <th><i class="fas fa-users"></i> Capacity</th>
                                 <th><i class="fas fa-cogs"></i> Actions</th>
@@ -402,7 +398,6 @@ session_start();
                     halls.forEach(h => {
                         let hall = JSON.stringify(h).replace(/'/g, "\\'");
                         html += `<tr>
-                            <td><span class="id-badge">${h.id}</span></td>
                             <td><strong>${h.name}</strong></td>
                             <td><span class="capacity-badge">${h.capacity} seats</span></td>
                             <td>
@@ -489,7 +484,6 @@ session_start();
                     html = `<table class="admin-table">
                         <thead>
                             <tr>
-                                <th><i class="fas fa-id-badge"></i> ID</th>
                                 <th><i class="fas fa-image"></i> Poster</th>
                                 <th><i class="fas fa-film"></i> Title</th>
                                 <th><i class="fas fa-clock"></i> Duration</th>
@@ -500,7 +494,6 @@ session_start();
                     movies.forEach(m => {
                         let movie = JSON.stringify(m).replace(/'/g, "\\'");
                         html += `<tr>
-                            <td><span class="id-badge">${m.id}</span></td>
                             <td><img src="${m.poster_url}" alt="${m.title}" class="movie-thumb"></td>
                             <td><strong>${m.title}</strong></td>
                             <td><span class="duration-badge">${m.duration} min</span></td>

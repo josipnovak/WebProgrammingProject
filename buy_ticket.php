@@ -13,7 +13,6 @@ $showtime_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <div class="admin-container">
         <?php
         if (isset($_GET['message'])) {
             echo '<div class="alert alert-info"><i class="fas fa-info-circle"></i> ' . htmlspecialchars($_GET['message']) . '</div>';
@@ -27,7 +26,6 @@ $showtime_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
         <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'user'): ?>
             <div style="display: flex; gap: 30px; margin-top: 20px;">
-                <!-- Ticket Information Panel -->
                 <div style="flex: 0 0 350px; max-width: 350px;">
                     <div class="form-container">
                         <div class="form-card">
@@ -80,7 +78,6 @@ $showtime_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
                     </div>
                 </div>
 
-                <!-- Seat Selection Panel -->
                 <div style="flex: 1;">
                     <div class="section-header">
                         <h2><i class="fas fa-chair"></i> Select Your Seats</h2>
@@ -99,12 +96,10 @@ $showtime_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
             </div>
 
         <?php else: ?>
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle"></i> 
-                Please <a href="index.php">log in</a> to buy a ticket.
-            </div>
+            <h2>
+                <a href="index.php" style="text-decoration: none; color: white">Log in</a> to buy a ticket.
+            </h2>
         <?php endif; ?>
-    </div>
 
     <script>
         const showtimeId = <?php echo json_encode($showtime_id); ?>;
@@ -139,7 +134,6 @@ $showtime_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
                 .then(data => {
                     showtimeData = data;
                     
-                    // Update showtime info
                     document.getElementById('showtime-info').innerHTML = `
                         <div class="dashboard-stats">
                                 <p><i class="fas fa-film"></i> Movie: ${data.showtime.title}</p>
@@ -203,18 +197,15 @@ $showtime_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
             const number = seatElement.dataset.number;
             
             if (seatElement.classList.contains('selected')) {
-                // Deselect seat
                 seatElement.classList.remove('selected');
                 seatElement.classList.add('available');
                 selectedSeats = selectedSeats.filter(seat => seat.id !== seatId);
             } else {
-                // Check if we can select more seats
                 if (selectedSeats.length >= ticketCount) {
                     showMessage('You can only select ' + ticketCount + ' seat(s)', 'warning');
                     return;
                 }
                 
-                // Select seat
                 seatElement.classList.remove('available');
                 seatElement.classList.add('selected');
                 selectedSeats.push({
@@ -234,11 +225,9 @@ $showtime_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
             </div>`;
         }
 
-        // Handle ticket count change
         document.getElementById('ticket_count').addEventListener('input', function() {
             const newCount = parseInt(this.value) || 1;
             
-            // If we have more selected seats than allowed, deselect excess
             if (selectedSeats.length > newCount) {
                 const excess = selectedSeats.slice(newCount);
                 excess.forEach(seat => {
@@ -253,52 +242,32 @@ $showtime_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
             }
         });
 
-        // Handle form submission
         document.getElementById('ticket-form').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const ticketCount = parseInt(document.getElementById('ticket_count').value) || 1;
-            
-            if (selectedSeats.length !== ticketCount) {
-                showMessage(`Please select exactly ${ticketCount} seat(s)`, 'error');
+            const msgEl = document.getElementById('purchase-msg');
+            const total_amount = document.getElementById('total-amount').textContent;
+
+            if (selectedSeats.length === 0) {
+                msgEl.innerHTML = 'Please select at least one seat', 'error';
                 return;
             }
             
-            const msgEl = document.getElementById('purchase-msg');
+            if (selectedSeats.length !== ticketCount) {
+                msgEl.innerHTML = `Please select exactly ${ticketCount} seat(s)`, 'error';
+                return;
+            }
+            
             msgEl.innerHTML = '<div class="loading-inline"><div class="spinner-small"></div> Processing purchase...</div>';
             
-            fetch('api/process_ticket.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    showtime_id: showtimeId,
-                    ticket_count: ticketCount,
-                    seat_ids: selectedSeats.map(seat => seat.id)
-                })
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    showMessage('Purchase successful! Redirecting to your tickets...', 'success');
-                    setTimeout(() => {
-                        window.location.href = 'my_tickets.php';
-                    }, 1500);
-                } else {
-                    showMessage(result.message || 'Purchase failed', 'error');
-                }
-            })
-            .catch(error => {
-                showMessage('An error occurred during purchase', 'error');
-            });
+            window.location.href = `payment.php?showtime_id=${showtimeId}&ticket_count=${ticketCount}&seat_ids=${selectedSeats.map(seat => seat.id).join(',')}&total_amount=${encodeURIComponent(total_amount)}`;
         })
 
         document.getElementById('ticket-form').addEventListener("input", function(e) {
             document.getElementById('purchase-msg').innerHTML = '';
         });
 
-        // Load data on page load
         loadSeatsAndShowtime();
     </script>
 </body>

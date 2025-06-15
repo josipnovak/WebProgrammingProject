@@ -14,21 +14,36 @@ session_start();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <h1>Schedule</h1>
-    <?php include 'includes/nav.php'; ?>
-    <div class="showtime-filter">
-        <input type="text" id="filter-movie" placeholder="Search movie name">
-        <div class="form-group">
-            <input type="text" name="filter-date" id="filter-date" placeholder="Select date" required>
+        <h1><i class="fas fa-calendar-alt"></i> Movie Schedule</h1>
+        <?php include 'includes/nav.php'; ?>
+        
+        <div class="showtime-filter-row">
+            <h3 class="filter-title">
+                <i class="fas fa-filter"></i> Filter
+            </h3>
+            <div class="showtime-filter">
+                <input type="text" id="filter-movie" placeholder="Movie name">
+                <input type="text" name="filter-date" id="filter-date" placeholder="Select date" required>
+                <input type="number" id="filter-price" placeholder="Max price" min="0">
+                <select id="filter-hall">
+                    <option value="">Select hall</option>
+                </select>
+                <button id="filter-btn"><i class="fas fa-search"></i> Filter</button>
+                <button id="clear-filter-btn" type="button"><i class="fas fa-times"></i> Clear</button>
+            </div>
         </div>
-        <input type="number" id="filter-price" placeholder="Max price" min="0">
-        <select id="filter-hall">
-                <option value="">All halls</option>
-        </select>
-        <button id="filter-btn">Filter</button>
-        <button id="clear-filter-btn" type="button">Clear</button>
-    </div>
-    <div id="showtimes" class="showtime-list"></div>
+
+        <div class="section-header">
+            <h2><i class="fas fa-list"></i> Available Showtimes</h2>
+        </div>
+        
+        <div id="showtimes" class="showtime-list">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading showtimes...</p>
+            </div>
+        </div>
+
     <script>
 
 function renderShowtimes(data) {
@@ -38,30 +53,60 @@ function renderShowtimes(data) {
         data.forEach(show => {
             html += `
                 <div class="showtime-card">
-                    <img src="${show.poster_url || 'images/default_poster.jpg'}"
-                         alt="${show.movie_name || 'Movie'} poster"
-                         onerror="this.onerror=null;this.src='images/default_poster.jpg';">
-                    <h2>${show.movie_name || 'Movie Title'}</h2>
-                    <div class="details">
-                        <strong>Start:</strong> ${show.start_time}<br>
-                        <strong>Hall:</strong> ${show.hall_id}<br>
-                        <strong>Price:</strong> ${show.price} €
+                    <div class="showtime-poster">
+                        <img src="${show.poster_url || 'images/default_poster.jpg'}"
+                             alt="${show.movie_name || 'Movie'} poster"
+                             onerror="this.onerror=null;this.src='images/default_poster.jpg';">
                     </div>
-                    <a href='buy_ticket.php?id=${show.id}'>Buy Ticket</a>
+                    <div class="showtime-info">
+                        <h3><i class="fas fa-film"></i> ${show.movie_name || 'Movie Title'}</h3>
+                        <div class="showtime-details">
+                            <div class="detail-item">
+                                <i class="fas fa-clock"></i>
+                                <span><strong>Start:</strong> ${show.start_time}</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-hotel"></i>
+                                <span><strong>Hall:</strong> ${show.hall_name}</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-euro-sign"></i>
+                                <span><strong>Price:</strong> ${show.price}€</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="showtime-actions">
+                        <a href='buy_ticket.php?id=${show.id}' class="btn-primary">
+                            <i class="fas fa-ticket-alt"></i> Buy Ticket
+                        </a>
+                    </div>
                 </div>
             `;
         });
         showtimesDiv.innerHTML = html;
     } else {
-        showtimesDiv.innerHTML = "<h2>No showtimes found for selected filter.</h2>";
+        showtimesDiv.innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No showtimes found for selected filter.
+            </div>
+        `;
     }
 }
 
 function fetchShowtimes(filters = {}) {
+    const showtimesDiv = document.getElementById("showtimes");
+    showtimesDiv.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading showtimes...</p>
+        </div>
+    `;
+    
     const formData = new FormData();
     for (const key in filters) {
         formData.append(key, filters[key]);
     }
+    console.log("Fetching showtimes with filters:", Object.fromEntries(formData.entries()));
     fetch("api/filter_showtimes.php", {
         method: "POST",
         body: formData
@@ -69,6 +114,13 @@ function fetchShowtimes(filters = {}) {
     .then(res => res.json())
     .then(data => {
         renderShowtimes(data);
+    })
+    .catch(error => {
+        showtimesDiv.innerHTML = `
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i> Error loading showtimes. Please try again.
+            </div>
+        `;
     });
 }
 
@@ -91,6 +143,7 @@ document.getElementById('clear-filter-btn').onclick = function() {
     document.getElementById('filter-hall').value = '';
     fetchShowtimes();
 };
+
 fetch("admin/get_halls.php")
     .then(res => res.json())
     .then(halls => {
@@ -101,13 +154,17 @@ fetch("admin/get_halls.php")
             option.textContent = hall.name;
             hallSelect.appendChild(option);
         });
+    })
+    .catch(error => {
+        console.error('Error loading halls:', error);
     });
-    flatpickr("#filter-date", {
-        enableTime: true,
-        dateFormat: "Y-m-d",
-        time_24hr: true,
-        minDate: "today"
-    });
+
+flatpickr("#filter-date", {
+    dateFormat: "Y-m-d",
+    time_24hr: true,
+    minDate: "today",
+    appendTo: document.body
+});
 </script>
 </body>
 </html>

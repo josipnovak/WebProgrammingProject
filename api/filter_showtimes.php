@@ -16,10 +16,12 @@ $query = "
         showtime.start_time, 
         showtime.price,
         movie.title AS movie_name,
-        movie.poster_url AS poster_url
+        movie.poster_url AS poster_url,
+        hall.name AS hall_name
     FROM showtime
     JOIN movie ON showtime.movie_id = movie.id
-    WHERE 1=1
+    JOIN hall ON showtime.hall_id = hall.id
+    WHERE showtime.start_time >= NOW()
 ";
 $params = [];
 $types = "";
