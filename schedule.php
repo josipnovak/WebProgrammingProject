@@ -35,6 +35,7 @@ session_start();
 
         <div class="section-header">
             <h2><i class="fas fa-list"></i> Available Showtimes</h2>
+            <div id="delete-msg" class="alert" style="display:none;"></div>
         </div>
         
         <div id="showtimes" class="showtime-list">
@@ -45,7 +46,8 @@ session_start();
         </div>
 
     <script>
-
+const isAdmin = <?php echo isset($_SESSION['role']) && $_SESSION['role'] === 'admin' ? 'true' : 'false'; ?>;
+console.log("Is Admin:", isAdmin);
 function renderShowtimes(data) {
     const showtimesDiv = document.getElementById("showtimes");
     if (data.length > 0) {
@@ -86,9 +88,13 @@ function renderShowtimes(data) {
                         </div>
                     </div>
                     <div class="showtime-actions">
-                        <a href='buy_ticket.php?id=${show.id}' class="btn-primary">
+                        ${isAdmin ? `
+                        <button class="btn-danger" onclick="deleteShowtime(${show.id})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                        ` : `<a href='buy_ticket.php?id=${show.id}' class="btn-primary">
                             <i class="fas fa-ticket-alt"></i> Buy Ticket
-                        </a>
+                        </a>`}
                     </div>
                 </div>
             `;
@@ -101,6 +107,35 @@ function renderShowtimes(data) {
             </div>
         `;
     }
+}
+
+function deleteShowtime(id){
+    if (!confirm("Are you sure you want to delete this showtime?")) {
+        return;
+    }
+    const msgDiv = document.getElementById("delete-msg");
+    fetch('admin/delete_showtime.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            msgDiv.textContent = data.message;
+            msgDiv.style.display = 'block';
+            setTimeout(() => {
+                msgDiv.style.display = 'none';
+            }, 2500);
+            fetchShowtimes();
+        } else {
+            msgDiv.textContent = data.message;
+            msgDiv.style.display = 'block';
+            setTimeout(() => {
+                msgDiv.style.display = 'none';
+            }, 2500);
+        }
+    })
 }
 
 document.getElementById('filter-btn').onclick = function() {

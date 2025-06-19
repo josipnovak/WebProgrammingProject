@@ -1,14 +1,17 @@
 <?php
+session_start();
 header('Content-Type: application/json');
 include "../includes/db.php";
 
-// Get filter values from POST
+$isAdmin = (isset($_SESSION['role']) && $_SESSION['role'] === 'admin');
+
 $movie = trim($_POST['movie'] ?? '');
 $date = trim($_POST['date'] ?? '');
 $price = trim($_POST['price'] ?? '');
 $hall = trim($_POST['hall'] ?? '');
 
-$query = "
+if ($isAdmin) {
+    $query = "
     SELECT 
         showtime.id, 
         showtime.movie_id, 
@@ -21,8 +24,25 @@ $query = "
     FROM showtime
     JOIN movie ON showtime.movie_id = movie.id
     JOIN hall ON showtime.hall_id = hall.id
-    WHERE showtime.start_time >= NOW()
 ";
+}
+else{
+    $query = "
+        SELECT 
+            showtime.id, 
+            showtime.movie_id, 
+            showtime.hall_id, 
+            showtime.start_time, 
+            showtime.price,
+            movie.title AS movie_name,
+            movie.poster_url AS poster_url,
+            hall.name AS hall_name
+        FROM showtime
+        JOIN movie ON showtime.movie_id = movie.id
+        JOIN hall ON showtime.hall_id = hall.id
+        WHERE showtime.start_time >= NOW()
+    ";
+}
 $params = [];
 $types = "";
 

@@ -7,15 +7,68 @@ session_start();
     <meta charset="UTF-8">
     <title>Pocetna</title>
     <link rel="stylesheet" href="styles/style.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <h1>Welcome to KinoClub</h1>
     <?php include 'includes/nav.php' ?>
      <?php if (isset($_SESSION['id'])): ?>
-        <div class="form-box">
-            <h2>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</h2>
-            <p>You are logged in as <strong><?php echo htmlspecialchars($_SESSION['role']); ?></strong>.</p>
-        </div>
+            <h2>Welcome back, <?php echo htmlspecialchars($_SESSION['username']); ?>!</h2>
+       <?php if (isset($_SESSION['role']) && $_SESSION['role'] != 'admin'): ?>
+            <div class="feature-showcase">
+                <div class="feature-item left-aligned">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #ffb74d, #ffa726);">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <div class="feature-content" onclick="window.location.href='schedule.php'">
+                        <h3>Buy Tickets</h3>
+                        <p>Browse movies, select showtimes, and book your perfect cinema experience.</p>
+                    </div>
+                </div>
+                <div class="feature-item right-aligned" onclick="window.location.href='my_tickets.php'">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+                        <i class="fas fa-film"></i>
+                    </div>
+                    <div class="feature-content">
+                        <h3>My Tickets</h3>
+                        <p>View your upcoming movies, manage your bookings, and access your ticket history.</p>
+                    </div>
+                </div>
+                <div class="feature-item left-aligned" onclick="window.location.href='profile.php'">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="feature-content">
+                        <h3>My Profile</h3>
+                        <p>Update your account settings and customize your KinoClub experience.</p>
+                    </div>
+                </div>
+            </div>
+        <?php else: ?>
+            <div class="feature-showcase">
+                <div class="feature-item left-aligned" onclick="window.location.href='schedule.php'">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #ffb74d, #ffa726);">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="feature-content">
+                        <h3>Review schedule</h3>
+                        <p>Check the schedule.</p>
+                    </div>
+                </div>
+                <div class="feature-item right-aligned" onclick="window.location.href='admin.php'">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="feature-content">
+                        <h3>Admin panel</h3>
+                        <p>Manage movies, showtimes, and user accounts.</p>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+</div>
+        
         <script>
             document.getElementById('logout-btn').onclick = function(e) {
                 e.preventDefault();

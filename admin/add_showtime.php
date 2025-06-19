@@ -29,6 +29,23 @@ $movie = $movie_result->fetch_assoc();
 $duration = $movie['duration'];
 $end_time = date("Y-m-d H:i:s", strtotime($start_time) + $duration * 60);
 
+$stmt = $conn->prepare("
+    SELECT COUNT(*) FROM showtime
+    WHERE hall_id = ?
+      AND start_time < ?
+      AND end_time > ?
+");
+$stmt->bind_param("iss", $hall_id, $end_time, $start_time);
+$stmt->execute();
+$stmt->bind_result($overlap_count);
+$stmt->fetch();
+$stmt->close();
+
+if ($overlap_count > 0) {
+    echo json_encode(['success' => false, 'message' => 'This showtime overlaps with an existing one in the same hall.']);
+    exit;
+}
+
 $stmt = $conn->prepare("INSERT INTO showtime (movie_id, hall_id, start_time, end_time, price) VALUES (?, ?, ?, ?, ?)");
 $stmt->bind_param("iissd", $movie_id, $hall_id, $start_time, $end_time, $price);
 
